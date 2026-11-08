@@ -1,0 +1,18 @@
+{
+  "name": "keemz-audio-lab",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Keemz Audio Lab — premium audio portfolio and secure digital sample store",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.800.0",
+    "@aws-sdk/s3-request-presigner": "^3.800.0"
+  },
+  "devDependencies": {
+    "vercel": "^41.0.0"
+  }
+}
