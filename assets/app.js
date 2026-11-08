@@ -347,6 +347,18 @@
       socialRoot.innerHTML = links.join('');
     }
 
+    const footSocial = $('#social-list-foot');
+    if (footSocial) {
+      footSocial.innerHTML = entries
+        .map(
+          ([key, url]) =>
+            `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+              socialNames[key] || key
+            )} ↗</a>`
+        )
+        .join('');
+    }
+
     const foot = $('#mobile-menu-foot');
     if (foot) {
       foot.textContent = config.contactEmail ? config.contactEmail : '';
@@ -543,8 +555,8 @@
     if (!tracks.length) {
       $('.portfolio-controls')?.setAttribute('hidden', '');
       trackRoot.innerHTML = `<div class="track-empty">
-        <b>New work is being mastered.</b>
-        <small>Previews will appear here as releases are cleared for public listening. In the meantime, ask the studio for a private listening link.</small>
+        <b>No public previews yet.</b>
+        <small>Previews appear here once a release is cleared for public listening. In the meantime, ask the studio for a private listening link.</small>
         <a class="text-link" href="#contact">Request a listening link <span aria-hidden="true">↗</span></a>
       </div>`;
       if (trackStatus) trackStatus.textContent = '';
@@ -910,7 +922,10 @@
     const rows = cartRows();
     const count = rows.reduce((sum, row) => sum + row.qty, 0);
 
-    if (cartCountEl) cartCountEl.textContent = String(count);
+    if (cartCountEl) {
+      cartCountEl.textContent = String(count);
+      cartCountEl.dataset.visible = count > 0 ? 'true' : 'false';
+    }
     if (cartCountSr) cartCountSr.textContent = `${count} ${count === 1 ? 'item' : 'items'} in bag`;
 
     if (cartLines) {
@@ -1405,7 +1420,108 @@
   renderCart();
   loadCatalog();
 
-  reveal($$('.section-heading, .signal-item, .process-list article, .service-card, .hero-panel, .store-meta'));
+  /* --------------------------- atmosphere ---------------------------------
+     Small, cheap flourishes. Everything here is decorative, transform-only,
+     and disabled for touch pointers and reduced-motion users. */
+  (function atmosphere() {
+    // Seamless marquee: duplicate the strip so a -50% translate loops cleanly.
+    const ticker = $('#ticker');
+    if (ticker && !ticker.dataset.ready) {
+      ticker.dataset.ready = '1';
+      ticker.innerHTML += ticker.innerHTML;
+    }
+
+    // Scroll progress rail.
+    const rail = $('#scroll-progress');
+    if (rail) {
+      let queued = 0;
+      const paint = () => {
+        queued = 0;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        rail.style.width = `${max > 0 ? Math.min(100, (window.scrollY / max) * 100).toFixed(2) : 0}%`;
+      };
+      const schedule = () => {
+        if (!queued) queued = window.requestAnimationFrame(paint);
+      };
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', schedule, { passive: true });
+      paint();
+    }
+
+    // Location, only when the studio configured one.
+    const locationSlot = $('[data-location]');
+    if (locationSlot && config.location) {
+      locationSlot.textContent = `${locationSlot.textContent} — ${config.location}`;
+    }
+
+    // Hero footnote: real counts, never invented numbers.
+    const heroMeta = $('#hero-meta');
+    if (heroMeta) {
+      const bits = [];
+      const count = config.tracks.length;
+      if (count) bits.push(`${count} selected piece${count === 1 ? '' : 's'}`);
+      if (config.services.length) bits.push(`${config.services.length} services`);
+      heroMeta.textContent = bits.join(' · ');
+    }
+
+    if (!finePointer() || reduceMotion()) return;
+
+    // Magnetic calls to action.
+    $$('.cta').forEach(button => {
+      button.addEventListener('pointermove', event => {
+        const rect = button.getBoundingClientRect();
+        const dx = (event.clientX - (rect.left + rect.width / 2)) / rect.width;
+        const dy = (event.clientY - (rect.top + rect.height / 2)) / rect.height;
+        button.style.transform = `translate(${(dx * 6).toFixed(1)}px, ${(dy * 4).toFixed(1)}px)`;
+      });
+      button.addEventListener('pointerleave', () => {
+        button.style.transform = '';
+      });
+    });
+
+    // A single ember ring as the pointer. Purely decorative.
+    if ($('.kal-cursor')) return;
+    const ring = document.createElement('div');
+    ring.className = 'kal-cursor';
+    ring.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(ring);
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let targetX = x;
+    let targetY = y;
+    let seen = false;
+
+    window.addEventListener(
+      'pointermove',
+      event => {
+        targetX = event.clientX;
+        targetY = event.clientY;
+        if (!seen) {
+          seen = true;
+          ring.classList.add('on');
+        }
+      },
+      { passive: true }
+    );
+    window.addEventListener('pointerdown', () => ring.classList.add('down'));
+    window.addEventListener('pointerup', () => ring.classList.remove('down'));
+    document.addEventListener('pointerover', event => {
+      const interactive = event.target instanceof Element
+        ? event.target.closest('a, button, input, textarea, select, [data-tilt]')
+        : null;
+      ring.classList.toggle('hot', Boolean(interactive));
+    });
+
+    (function follow() {
+      x += (targetX - x) * 0.18;
+      y += (targetY - y) * 0.18;
+      ring.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      window.requestAnimationFrame(follow);
+    })();
+  })();
+
+  reveal($$('.section-head, .section-rail, .listen-stack > *, .process-list li, .contact-head, .contact-form, .social-list, .manifesto-text, .signal-item, .service-card'));
 
   if (!tracks.length) {
     const filters = $('#track-filters');

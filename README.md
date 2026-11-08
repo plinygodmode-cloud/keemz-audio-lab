@@ -40,10 +40,12 @@ extends the experience. Everything below was verified in the repository, not gue
 
 ### Enhancements
 
-- **Visual system:** refined hero with a floating studio panel and CSS orbit field, editorial type
-  scale, capability ticker, glassmorphism surfaces, pointer-driven 3D card tilt (disabled for touch
-  and reduced motion), cinematic section reveals, richer player and store cards, mobile-first
-  breakpoints down to 320 px.
+- **Visual system (v3 "Monolith"):** a full-bleed 3D hero — a liquid-metal sculpture lit by a
+  procedural studio environment, ember wireframe shell and orbital rings — with the wordmark
+  blending through it in `exclusion`. Editorial type scale (Syne display, Instrument Serif italics,
+  Instrument Sans text, DM Mono micro-labels), hairline rules instead of boxes, a live marquee,
+  magnetic calls to action, a pointer ring, scroll progress, and a print-like section rhythm.
+  No glassmorphism, no neon gradients, no card soup.
 - **Portfolio:** categories, live search, featured-first ordering, artwork, BPM/genre/key badges,
   native previews, provider embeds opened on demand (so nothing third-party loads until asked).
 - **Store:** server-priced catalogue, per-pack previews, contents list, licence label, compare-at
@@ -466,21 +468,29 @@ mkdir -p /tmp/three-build && cd /tmp/three-build
 npm init -y && npm install three@0.160.0 esbuild
 cat > entry.js <<'EOF'
 export {
-  Scene, PerspectiveCamera, WebGLRenderer,
-  IcosahedronGeometry, Mesh, MeshPhysicalMaterial, MeshBasicMaterial,
-  AmbientLight, PointLight, BufferGeometry, BufferAttribute, Points, PointsMaterial
+  Scene, PerspectiveCamera, WebGLRenderer, Group, Mesh,
+  IcosahedronGeometry, TorusGeometry,
+  MeshPhysicalMaterial, MeshBasicMaterial, ShaderMaterial,
+  BufferGeometry, BufferAttribute, Points,
+  PointLight, AmbientLight, Color, Vector2, PMREMGenerator,
+  ACESFilmicToneMapping, SRGBColorSpace, AdditiveBlending, DoubleSide, Clock
 } from 'three';
 EOF
-npx esbuild entry.js --bundle --minify --format=esm --legal-comments=none \
+npx esbuild entry.js --bundle --minify --format=esm --legal-comments=inline \
   --outfile=three.module.min.js
 ```
 
 Copy the output to `assets/vendor/three.module.min.js` and keep the MIT licence header.
 
-The scene pauses when off-screen or when the tab is hidden, caps device pixel ratio at 1.6,
-scales particle count to the viewport and renders a single still frame under
-`prefers-reduced-motion`. If WebGL is unavailable the canvas is removed and the CSS ambience
-(gradient orbs, grain, orbit rings) carries the design.
+The scene is entirely procedural: a PMREM environment built from a small gradient shader room
+(two soft boxes, warm top, cool floor) supplies the chrome reflections, so there is no HDR file to
+download. Surface motion is an analytic displacement in `onBeforeCompile`, with the normal rebuilt
+from the tangent plane so the highlights stay correct.
+
+It pauses outside the hero and when the tab is hidden, caps device pixel ratio at 1.75, and renders
+one composed still frame under `prefers-reduced-motion`. If WebGL is unavailable the canvas is
+removed, `.no-webgl` is set, and the CSS ambience (gradient orbs, grain, orbit rings) carries the
+design.
 
 ---
 
@@ -504,7 +514,8 @@ checklist in §10 is the shortest path to it.
 ## 15. Credits
 
 - Three.js r160 — MIT (`assets/vendor/three-LICENSE.txt`)
-- Syne and DM Mono — SIL Open Font License 1.1 (`assets/fonts/OFL-*.txt`)
+- Syne, Instrument Serif, Instrument Sans and DM Mono — SIL Open Font License 1.1
+  (`assets/fonts/OFL-*.txt`)
 - No other runtime dependencies beyond the AWS SDK used for R2 signing.
 
 © Keemz Audio Lab. All studio content, audio and sample packs remain the property of their owner.
