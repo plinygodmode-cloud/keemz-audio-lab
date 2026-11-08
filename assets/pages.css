@@ -1,0 +1,62 @@
+/* Secondary pages (payment return, licensing, 404) — builds on style.css */
+
+.page-shell { position: relative; z-index: 5; min-height: 100svh; display: flex; flex-direction: column; }
+.page-header { border-bottom: 1px solid var(--line); }
+.page-header-inner {
+  width: var(--shell); margin-inline: auto; min-height: 78px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.page-main { flex: 1; display: grid; place-items: center; padding: clamp(40px, 7vw, 90px) 0; }
+.page-card {
+  width: min(660px, calc(100% - 40px));
+  padding: clamp(28px, 5vw, 52px);
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, rgba(11, 16, 27, 0.9), rgba(5, 7, 13, 0.92));
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  text-align: center;
+}
+.page-card.is-wide { width: min(860px, calc(100% - 40px)); text-align: left; }
+.page-mark {
+  width: 60px; height: 60px; margin: 0 auto 24px;
+  display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid var(--line-hot); color: var(--green); font-size: 1.4rem;
+}
+.page-mark.is-warn { border-color: rgba(255, 190, 90, 0.4); color: #ffc35a; }
+.page-mark.is-bad { border-color: rgba(255, 122, 122, 0.4); color: var(--danger); }
+.page-card h1 { font-size: clamp(2rem, 5.6vw, 3.4rem); letter-spacing: -0.045em; line-height: 1; margin-bottom: 16px; }
+.page-card h1 em { font-style: normal; color: var(--cyan); }
+.page-card > p { color: var(--muted); font-size: 0.8rem; line-height: 1.9; max-width: 56ch; margin-inline: auto; }
+.page-card.is-wide > p { margin-inline: 0; }
+.page-meta {
+  display: grid; gap: 8px; margin: 26px 0;
+  padding: 18px; border: 1px solid var(--line); background: rgba(0, 207, 255, 0.04);
+  text-align: left;
+}
+.page-meta div { display: flex; justify-content: space-between; gap: 16px; font-size: 0.7rem; color: var(--muted); }
+.page-meta strong { color: var(--white); font-weight: 400; }
+.page-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+.page-card.is-wide .page-actions { justify-content: flex-start; }
+.page-note { margin-top: 22px; font-size: 0.62rem; color: var(--dim); line-height: 1.8; }
+.page-status { min-height: 1.2em; font-size: 0.7rem; color: var(--cyan); margin-top: 16px; }
+.page-status.is-error { color: var(--danger); }
+
+/* Licensing document */
+.doc { display: grid; gap: 26px; text-align: left; }
+.doc h2 { font-size: 1.15rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+.doc p, .doc li { color: var(--muted); font-size: 0.76rem; line-height: 1.9; }
+.doc ul { display: grid; gap: 8px; padding-left: 0; }
+.doc ul li { position: relative; padding-left: 18px; }
+.doc ul li::before { content: '▸'; position: absolute; left: 0; color: var(--cyan); font-size: 0.7rem; }
+.doc .callout {
+  border-left: 2px solid var(--cyan); padding: 14px 16px;
+  background: rgba(0, 207, 255, 0.05); color: var(--muted); font-size: 0.74rem; line-height: 1.85;
+}
+.doc strong { color: var(--white); font-weight: 400; }
+.doc table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.doc th, .doc td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; }
+.doc th { color: var(--white); font-weight: 400; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+@media (max-width: 640px) {
+  .page-card { padding: 24px 20px; }
+  .page-actions .button { width: 100%; justify-content: space-between; }
+}

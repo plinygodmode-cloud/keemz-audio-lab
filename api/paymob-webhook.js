@@ -1,89 +1,287 @@
+'use strict';
+
 const crypto = require('node:crypto');
 
-const parseJson = value => { try { return value ? JSON.parse(value) : null; } catch { return null; } };
-const safeEqualHex = (a, b) => {
-  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
-  try { return crypto.timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex')); } catch { return false; }
-};
-const text = value => value === undefined || value === null ? '' : String(value);
+const config = require('../lib/config');
+const { readJsonBody, text } = require('../lib/http');
+const { verifyTransactionHmac } = require('../lib/paymob');
+const { getOrder, saveOrder, updateOrder, claim, releaseClaim, storeInfo } = require('../lib/store');
+const { loadCatalog } = require('../lib/catalog');
+const { STATUS, matchesPayment, buildDownloadLinks } = require('../lib/orders');
+const { sendEmail, deliveryEmail } = require('../lib/email');
+const { safeEqual, isOrderRef } = require('../lib/security');
 
-function verifyPaymobHmac(obj, received) {
-  const fields = [
-    obj.amount_cents, obj.created_at, obj.currency, obj.error_occured,
-    obj.has_parent_transaction, obj.id, obj.integration_id, obj.is_3d_secure,
-    obj.is_auth, obj.is_capture, obj.is_refunded, obj.is_standalone_payment,
-    obj.is_voided, obj.order?.id, obj.owner, obj.pending,
-    obj.source_data?.pan, obj.source_data?.sub_type, obj.source_data?.type, obj.success
-  ];
-  const message = fields.map(text).join('');
-  const expected = crypto.createHmac('sha512', process.env.PAYMOB_HMAC_SECRET).update(message).digest('hex');
-  return safeEqualHex(expected, String(received || '').toLowerCase());
-}
+/*
+  POST /api/paymob-webhook?hmac=<hex>
 
-function verifyOrderReference(reference, payload, signedOrder) {
-  if (!reference || !payload || !signedOrder || typeof signedOrder.nonce !== 'string' || !process.env.PAYMENT_SIGNING_SECRET) return false;
-  const expected = crypto.createHmac('sha256', process.env.PAYMENT_SIGNING_SECRET).update(payload).digest('hex');
-  return reference === `KAL:${signedOrder.nonce}:${expected}`;
-}
+  Paymob's "transaction processed" callback. Rules enforced here:
+    1. The HMAC-SHA512 over the 20 documented fields must verify.
+    2. The order must exist in our own store (created by /api/checkout).
+    3. Amount, currency and item list must match the stored order.
+    4. Only a successful, non-pending, non-refunded transaction delivers.
+    5. Each transaction id can be fulfilled exactly once (atomic claim),
+       so Paymob retries and replayed callbacks cannot duplicate delivery.
+    6. A delivery failure is retried by Paymob (non-2xx) and never
+       recorded as delivered.
+*/
 
-async function sendDeliveryEmail({ email, items, transactionId, siteUrl }) {
-  const products = parseJson(process.env.PRODUCTS_JSON) || [];
-  const objects = parseJson(process.env.DOWNLOAD_OBJECTS_JSON) || {};
-  const productMap = new Map(products.filter(p => p?.active === true).map(p => [p.id, p]));
-  const links = [];
-  for (const item of items) {
-    const product = productMap.get(item.id);
-    if (!product || !objects[item.id]) throw new Error(`Missing active product or private object for ${item.id}`);
-    const tokenData = Buffer.from(JSON.stringify({ id: item.id, email, transactionId, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 })).toString('base64url');
-    const tokenSig = crypto.createHmac('sha256', process.env.DOWNLOAD_TOKEN_SECRET).update(tokenData).digest('hex');
-    const url = `${siteUrl}/api/download?token=${encodeURIComponent(`${tokenData}.${tokenSig}`)}`;
-    links.push(`<li style="margin:0 0 14px"><a href="${url}" style="color:#00cfff;text-decoration:none">Download ${String(product.name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</a> <span style="color:#8b94a5">× ${item.quantity}</span></li>`);
+function hmacFromRequest(req) {
+  if (req.query && typeof req.query.hmac === 'string') return req.query.hmac;
+  try {
+    return new URL(req.url, `https://${req.headers.host || 'localhost'}`).searchParams.get('hmac') || '';
+  } catch {
+    return '';
   }
-  const html = `<!doctype html><html><body style="margin:0;background:#050811;color:#eef4fa;font-family:Arial,sans-serif;padding:32px"><div style="max-width:560px;margin:auto;background:#0b111d;border:1px solid #1c2a3c;padding:30px"><p style="color:#00cfff;letter-spacing:3px;font-size:11px">KEEMZ AUDIO LAB</p><h1 style="font-size:25px">Your sounds are ready.</h1><p style="color:#aab6c7;line-height:1.7">Payment confirmed. Your private download links are below. Each link remains available for 7 days.</p><ul style="padding-left:20px;line-height:1.8">${links.join('')}</ul><p style="color:#78879b;font-size:12px">Order reference: ${String(transactionId)}</p><p style="color:#78879b;font-size:12px">Keep this email for your records. For help, reply to this message.</p></div></body></html>`;
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-      'Idempotency-Key': `kal-delivery-${transactionId}`
-    },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [email], subject: 'Your Keemz Audio Lab downloads are ready', html })
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`Resend delivery failed: ${response.status} ${JSON.stringify(data)}`);
+}
+
+/**
+ * Backwards compatibility: earlier intentions carried a signed order payload
+ * inside `extras`. It is HMAC-signed with PAYMENT_SIGNING_SECRET, so it is
+ * still trustworthy, but new orders are always read from the store.
+ */
+function legacyOrderFromExtras(obj, paymentSecret, reference) {
+  const payload = obj?.payment_key_claims?.extra?.order_data;
+  if (typeof payload !== 'string' || !payload || !paymentSecret) return null;
+
+  // Two historic formats: `<payload>.<signature>` in extras, or a signature
+  // carried in the special reference `KAL:<nonce>:<signature>`.
+  let body = payload;
+  let signature = '';
+  if (payload.includes('.')) {
+    [body, signature] = payload.split('.');
+  } else if (typeof reference === 'string') {
+    const parts = reference.split(':');
+    signature = parts.length === 3 ? parts[2] : '';
+  }
+  if (!body || !signature) return null;
+
+  const expected = crypto.createHmac('sha256', paymentSecret).update(body).digest('hex');
+  if (!safeEqual(expected, signature)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!data || !Array.isArray(data.items) || !Number.isSafeInteger(data.amount)) return null;
+    return {
+      v: 1,
+      // Keep the modern reference shape so download tokens stay valid.
+      ref: `KAL-${crypto.createHash('sha256').update(body).digest('hex').slice(0, 24)}`,
+      status: STATUS.CREATED,
+      createdAt: Number(data.createdAt) || Date.now(),
+      amount: data.amount,
+      currency: String(data.currency),
+      email: String(data.email || ''),
+      items: data.items.map(item => ({ id: String(item.id), quantity: Number(item.quantity) })),
+      paymob: {}
+    };
+  } catch {
+    return null;
+  }
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'POST') return res.status(405).send('Method not allowed');
-  const required = ['PAYMOB_HMAC_SECRET', 'PAYMENT_SIGNING_SECRET', 'DOWNLOAD_TOKEN_SECRET', 'RESEND_API_KEY', 'EMAIL_FROM', 'PRODUCTS_JSON', 'DOWNLOAD_OBJECTS_JSON', 'SITE_URL'];
-  if (required.some(key => !process.env[key])) return res.status(503).send('Fulfilment is not configured');
+  if (req.method !== 'POST') return text(res, 405, 'Method not allowed');
 
-  const body = req.body && typeof req.body === 'object' ? req.body : parseJson(req.body);
-  const obj = body?.obj;
-  const receivedHmac = req.query?.hmac || new URL(req.url, `https://${req.headers.host || 'localhost'}`).searchParams.get('hmac');
-  if (body?.type !== 'TRANSACTION' || !obj || !verifyPaymobHmac(obj, receivedHmac)) {
-    return res.status(401).send('Invalid callback signature');
+  const paymob = config.paymobConfig();
+  const secrets = config.signingSecrets();
+  const email = config.emailConfig();
+  const site = config.siteUrl();
+  const store = storeInfo();
+
+  const missing = [];
+  if (!paymob.hmacSecret) missing.push('PAYMOB_HMAC_SECRET');
+  if (!secrets.payment) missing.push('PAYMENT_SIGNING_SECRET');
+  if (!secrets.download) missing.push('DOWNLOAD_TOKEN_SECRET');
+  if (!email.resendKey) missing.push('RESEND_API_KEY');
+  if (!email.from) missing.push('EMAIL_FROM');
+  if (!site) missing.push('SITE_URL');
+  if (missing.length) {
+    console.error('[keemz] webhook cannot fulfil — missing config:', missing.join(', '));
+    // 503 asks Paymob to retry once the deployment is fixed.
+    return text(res, 503, 'Fulfilment is not configured');
   }
-  if (obj.success !== true || obj.pending === true || obj.is_voided === true || obj.is_refunded === true) {
-    return res.status(200).send('Verified non-success transaction; no fulfilment');
+  if (!store.durable && !config.allowEphemeralStore()) {
+    console.error('[keemz] webhook cannot fulfil — no durable order store configured.');
+    return text(res, 503, 'Order store is not configured');
   }
 
+  const body = readJsonBody(req, { maxBytes: 256 * 1024 });
+  if (!body.ok) return text(res, body.status, body.error);
+  const payload = body.value;
+  const obj = payload?.obj;
+  if (!obj || (payload.type && payload.type !== 'TRANSACTION')) {
+    return text(res, 400, 'Unsupported callback payload');
+  }
+
+  const receivedHmac = hmacFromRequest(req);
+  if (!verifyTransactionHmac(obj, receivedHmac, paymob.hmacSecret)) {
+    console.warn('[keemz] webhook rejected: invalid HMAC', { transaction: obj?.id });
+    return text(res, 401, 'Invalid callback signature');
+  }
+
+  const catalogue = loadCatalog();
+  const reference = String(obj?.order?.merchant_order_id || obj?.order?.special_reference || '').trim();
+  let order = null;
+
+  if (isOrderRef(reference)) {
+    try {
+      order = await getOrder(reference);
+    } catch (error) {
+      console.error('[keemz] webhook could not read order store:', error.message);
+      return text(res, 503, 'Order store unavailable; retry later');
+    }
+  }
+
+  let fromLegacyPayload = false;
+  if (!order) {
+    const legacy = legacyOrderFromExtras(obj, secrets.payment, reference);
+    if (legacy) {
+      order = legacy;
+      fromLegacyPayload = true;
+      console.warn('[keemz] fulfilling a legacy intention via signed extras:', legacy.ref);
+    }
+  }
+
+  if (!order) {
+    console.error('[keemz] webhook: no matching order for reference', JSON.stringify(reference));
+    // 404 with a retry hint: an order created milliseconds ago may still be
+    // propagating. Paymob retries, which is what we want.
+    return text(res, 404, 'Order not found; retry later');
+  }
+
+  if (payload.type && String(obj.integration_id || '') !== String(paymob.integrationId)) {
+    // Not fatal: merchants can run several integrations (card, wallet).
+    console.warn('[keemz] callback integration differs from PAYMOB_INTEGRATION_ID', {
+      received: obj.integration_id,
+      configured: paymob.integrationId
+    });
+  }
+
+  const transactionId = String(obj.id || '');
+  if (!transactionId) return text(res, 400, 'Missing transaction id');
+
+  // --- Non-delivering outcomes -------------------------------------------
+  if (obj.is_refunded === true || obj.is_voided === true) {
+    const nextStatus = obj.is_refunded === true ? STATUS.REFUNDED : STATUS.VOIDED;
+    if (!fromLegacyPayload) {
+      await updateOrder(order.ref, {
+        status: nextStatus,
+        paymob: { ...(order.paymob || {}), transactionId },
+        refundedAt: obj.is_refunded === true ? Date.now() : order.refundedAt,
+        voidedAt: obj.is_voided === true ? Date.now() : order.voidedAt
+      }).catch(error => console.error('[keemz] failed to record refund:', error.message));
+    }
+    console.log('[keemz] recorded', nextStatus, 'transaction', transactionId);
+    return text(res, 200, 'Verified; no delivery for refunded or voided transaction');
+  }
+
+  if (obj.pending === true) {
+    // The customer may still complete the payment; do not mark the order
+    // failed and do not deliver.
+    return text(res, 200, 'Verified pending transaction; waiting for a final result');
+  }
+
+  if (obj.success !== true || obj.error_occured === true) {
+    if (!fromLegacyPayload && order.status !== STATUS.PAID) {
+      await updateOrder(order.ref, {
+        status: STATUS.FAILED,
+        lastFailureAt: Date.now(),
+        paymob: { ...(order.paymob || {}), transactionId }
+      }).catch(error => console.error('[keemz] failed to record failed payment:', error.message));
+    }
+    return text(res, 200, 'Verified non-success transaction; no fulfilment');
+  }
+
+  // --- Amount / currency / item reconciliation ---------------------------
+  if (!matchesPayment(order, obj)) {
+    console.error('[keemz] webhook amount/currency mismatch — not fulfilling', {
+      ref: order.ref,
+      expected: { amount: order.amount, currency: order.currency },
+      received: { amount: obj.amount_cents, currency: obj.currency }
+    });
+    return text(res, 200, 'Verified callback did not match the stored order; no fulfilment');
+  }
+
+  // --- Idempotency: one fulfilment per transaction ------------------------
+  let claimed;
   try {
-    const extras = obj.payment_key_claims?.extra || {};
-    const orderPayload = String(extras.order_data || '');
-    if (!orderPayload) throw new Error('Signed order payload is missing');
-    const signedOrder = JSON.parse(Buffer.from(orderPayload, 'base64url').toString('utf8'));
-    const reference = obj.order?.merchant_order_id || obj.merchant_order_id || '';
-    if (!verifyOrderReference(reference, orderPayload, signedOrder)) throw new Error('Signed order reference is invalid');
-    if (Date.now() - Number(signedOrder.createdAt) > 2 * 60 * 60 * 1000 || signedOrder.createdAt > Date.now() + 60_000) throw new Error('Order reference expired');
-    if (Number(obj.amount_cents) !== Number(signedOrder.amount) || String(obj.currency) !== String(signedOrder.currency)) throw new Error('Paid amount or currency does not match order');
-    if (!Array.isArray(signedOrder.items) || !signedOrder.items.length || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signedOrder.email)) throw new Error('Signed order data is incomplete');
-    const siteUrl = process.env.SITE_URL.replace(/\/$/, '');
-    await sendDeliveryEmail({ email: signedOrder.email, items: signedOrder.items, transactionId: String(obj.id), siteUrl });
-    return res.status(200).send('Payment verified and digital delivery queued');
+    claimed = await claim(`txn:${transactionId}`);
   } catch (error) {
-    console.error('Paymob callback processing error:', error);
-    return res.status(500).send('Verified callback could not be fulfilled; retry later');
+    console.error('[keemz] could not claim transaction (retry later):', error.message);
+    return text(res, 503, 'Could not lock transaction; retry later');
+  }
+  if (!claimed) {
+    console.log('[keemz] duplicate callback ignored for transaction', transactionId);
+    return text(res, 200, 'Duplicate callback ignored; already fulfilled');
+  }
+
+  const paidAt = Date.now();
+  try {
+    const { links, expiresAt } = buildDownloadLinks(order, {
+      siteUrl: site,
+      downloadSecret: secrets.download,
+      catalogue
+    });
+    const message = deliveryEmail({
+      order,
+      links,
+      siteUrl: site,
+      expiresOn: new Date(expiresAt).toUTCString()
+    });
+
+    const sent = await sendEmail({
+      apiKey: email.resendKey,
+      from: email.from,
+      to: order.email,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
+      replyTo: email.replyTo || email.contactTo || undefined,
+      bcc: email.deliveryBcc ? [email.deliveryBcc] : undefined,
+      idempotencyKey: `kal-delivery-${transactionId}`
+    });
+
+    if (!fromLegacyPayload) {
+      await updateOrder(order.ref, {
+        status: STATUS.PAID,
+        paidAt,
+        paymob: { ...(order.paymob || {}), transactionId },
+        delivery: {
+          emailId: sent.id,
+          deliveredAt: Date.now(),
+          attempts: Number(order.delivery?.attempts || 0) + 1
+        }
+      });
+    }
+
+    if (fromLegacyPayload) {
+      // Persist the reconstructed order so its download links can be
+      // re-validated (and revoked) like any other order.
+      await saveOrder({
+        ...order,
+        status: STATUS.PAID,
+        paidAt,
+        updatedAt: Date.now(),
+        paymob: { ...(order.paymob || {}), transactionId },
+        delivery: { emailId: sent.id, deliveredAt: Date.now(), attempts: 1 }
+      }).catch(error => console.error('[keemz] could not persist legacy order:', error.message));
+    }
+
+    console.log('[keemz] delivered order', order.ref, 'transaction', transactionId);
+    return text(res, 200, 'Payment verified and digital delivery sent');
+  } catch (error) {
+    console.error('[keemz] delivery failed; releasing claim so Paymob can retry:', error.message, error.meta || '');
+    await releaseClaim(`txn:${transactionId}`).catch(() => {});
+    if (!fromLegacyPayload) {
+      await updateOrder(order.ref, {
+        status: order.status === STATUS.PAID ? STATUS.PAID : STATUS.DELIVERY_FAILED,
+        paymob: { ...(order.paymob || {}), transactionId },
+        delivery: {
+          emailId: order.delivery?.emailId || null,
+          deliveredAt: order.delivery?.deliveredAt || null,
+          attempts: Number(order.delivery?.attempts || 0) + 1
+        }
+      }).catch(() => {});
+    }
+    // Non-2xx so Paymob retries the callback instead of losing the sale.
+    return text(res, 500, 'Verified payment but delivery failed; retry later');
   }
 };

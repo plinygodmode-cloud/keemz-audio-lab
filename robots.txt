@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /payment-return
+
+Sitemap: https://keemzaudiolab.vercel.app/sitemap.xml
