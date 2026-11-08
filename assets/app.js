@@ -9,8 +9,20 @@
   /* ----------------------------- utilities ------------------------------- */
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // matchMedia is missing in some embedded webviews and test environments;
+  // a missing API must never stop the page from rendering.
+  const mediaQuery = (query, fallback = false) => {
+    if (typeof window.matchMedia !== 'function') {
+      return { matches: fallback, addEventListener() {}, removeEventListener() {} };
+    }
+    try {
+      return window.matchMedia(query);
+    } catch {
+      return { matches: fallback, addEventListener() {}, removeEventListener() {} };
+    }
+  };
+  const reduceMotion = () => mediaQuery('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = () => mediaQuery('(hover: hover) and (pointer: fine)').matches;
   const htmlEscapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const escapeHtml = value => String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, char => htmlEscapes[char]);
   const text = (value, max = 180) => String(value === undefined || value === null ? '' : value).replace(/\s+/g, ' ').trim().slice(0, max);
@@ -82,6 +94,7 @@
 
   const config = {
     siteName: text(rawConfig.siteName, 80) || 'Keemz Audio Lab',
+    location: text(rawConfig.location, 60),
     contactEmail: EMAIL_RE.test(String(rawConfig.contactEmail || '')) ? String(rawConfig.contactEmail) : '',
     whatsapp: /^\+?\d{8,16}$/.test(String(rawConfig.whatsapp || '').replace(/\s/g, '')) ? String(rawConfig.whatsapp).replace(/\s/g, '') : '',
     socials: rawConfig.socials && typeof rawConfig.socials === 'object' ? rawConfig.socials : {},
@@ -1398,7 +1411,7 @@
   });
 
   // Close the mobile menu if the viewport grows past the breakpoint.
-  const desktopQuery = window.matchMedia('(min-width: 901px)');
+  const desktopQuery = mediaQuery('(min-width: 901px)');
   const onBreakpoint = event => {
     if (event.matches && menuOpen) setMenu(false);
   };

@@ -36,8 +36,15 @@ import {
 } from './vendor/three.module.min.js';
 
 const canvas = document.getElementById('bg');
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const finePointer = window.matchMedia('(pointer: fine)');
+
+// Never let a missing matchMedia stop the scene (or the rest of the page).
+const mediaQuery = query => {
+  if (typeof window.matchMedia === 'function') return window.matchMedia(query);
+  return { matches: false, addEventListener() {}, removeEventListener() {} };
+};
+
+const reduceMotion = mediaQuery('(prefers-reduced-motion: reduce)');
+const finePointer = mediaQuery('(pointer: fine)');
 
 const PALETTE = {
   ink: new Color('#050506'),

@@ -135,7 +135,13 @@ npm run dev                    # http://localhost:3000
 ```
 
 `npm run dev` runs `scripts/dev-server.js`: static files, `cleanUrls`, and the real `api/*`
-handlers with `.env.local` loaded. No Vercel login required. If you prefer the real Vercel
+handlers with `.env.local` loaded.
+
+**`design-preview.html`** is a single self-contained snapshot of the homepage (CSS, fonts as
+`data:` URIs, site config, app logic and the three.js scene bundled inline). Open it directly in
+any browser — no server, no network — to look at the design or to share it on a phone. It is a
+snapshot, not a live build: the store shows its empty state because there is no API behind it,
+and checkout/contact cannot reach a server. Use `npm run dev` for anything functional. No Vercel login required. If you prefer the real Vercel
 runtime, `npm run dev:vercel` (requires `vercel login`).
 
 Without environment variables the site runs fully: hero, 3D scene, portfolio, services, contact
