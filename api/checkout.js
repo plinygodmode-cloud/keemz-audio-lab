@@ -1,121 +1,141 @@
-const crypto = require('node:crypto');
+'use strict';
 
-const parseJson = value => { try { return value ? JSON.parse(value) : null; } catch { return null; } };
-const respond = (res, status, payload) => res.status(status).json(payload);
-const emailOk = value => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 200;
+const config = require('../lib/config');
+const { json, fail, readJsonBody, requireJsonContentType, methodNotAllowed } = require('../lib/http');
+const { checkOrigin, clientIp, issueReturnToken } = require('../lib/security');
+const { isEmail, isPhone, normalizePhone, singleLine } = require('../lib/util');
+const { loadCatalog, resolveLineItems } = require('../lib/catalog');
+const { createOrder, STATUS } = require('../lib/orders');
+const { saveOrder, updateOrder, rateLimit } = require('../lib/store');
+const { createIntention, buildCheckoutUrl, PaymobError } = require('../lib/paymob');
 
+/*
+  POST /api/checkout
+  Body: { items: [{ id, quantity }], customer: { name, email, phone } }
+
+  The browser never sends prices. The order is persisted first, then a
+  Paymob intention is created with our signed reference, so the callback can
+  be reconciled against a record the customer cannot influence.
+*/
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'POST') return respond(res, 405, { error: 'Method not allowed.' });
-
-  const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '');
-  const required = ['PAYMOB_SECRET_KEY', 'PAYMOB_PUBLIC_KEY', 'PAYMOB_INTEGRATION_ID', 'PAYMOB_HMAC_SECRET', 'PAYMENT_SIGNING_SECRET', 'PRODUCTS_JSON', 'DOWNLOAD_OBJECTS_JSON'];
-  const missing = required.filter(key => !process.env[key]);
-  if (!siteUrl || missing.length) return respond(res, 503, { error: 'Checkout is not configured yet. Complete the Paymob and store environment setup first.' });
-
-  const origin = req.headers.origin;
-  if (origin) {
-    try { if (new URL(origin).host !== new URL(siteUrl).host) return respond(res, 403, { error: 'Origin not allowed.' }); }
-    catch { return respond(res, 403, { error: 'Origin not allowed.' }); }
+  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  if (!requireJsonContentType(req)) {
+    return json(res, 415, { error: 'Checkout requests must be sent as JSON.' });
   }
 
-  const body = req.body && typeof req.body === 'object' ? req.body : parseJson(req.body);
-  const requestedItems = body?.items;
-  const customer = body?.customer || {};
-  if (!Array.isArray(requestedItems) || requestedItems.length < 1 || requestedItems.length > 12) {
-    return respond(res, 400, { error: 'Your bag is empty or contains too many different items.' });
-  }
-  const fullName = String(customer.name || '').trim().replace(/\s+/g, ' ');
-  const email = String(customer.email || '').trim().toLowerCase();
-  const phone = String(customer.phone || '').trim();
-  if (fullName.length < 2 || fullName.length > 120 || !emailOk(email) || !/^\+?[0-9 ()-]{8,25}$/.test(phone)) {
-    return respond(res, 400, { error: 'Enter a valid name, email and phone number.' });
+  const origin = checkOrigin(req, config.allowedOrigins());
+  if (!origin.ok) {
+    console.warn('[keemz] checkout origin rejected:', origin.reason, req.headers.origin);
+    return json(res, 403, { error: 'This request came from an unrecognised origin.' });
   }
 
-  const products = parseJson(process.env.PRODUCTS_JSON) || [];
-  const downloads = parseJson(process.env.DOWNLOAD_OBJECTS_JSON) || {};
-  if (!Array.isArray(products) || !downloads || typeof downloads !== 'object') return respond(res, 500, { error: 'Store catalogue configuration is invalid.' });
-  const currency = String(process.env.PAYMOB_CURRENCY || 'EGP').toUpperCase();
-  const productMap = new Map(products.filter(p => p?.active === true).map(p => [p.id, p]));
-  const normalized = [];
-  const seen = new Set();
-  for (const row of requestedItems) {
-    const id = String(row?.id || '');
-    const quantity = Number(row?.quantity);
-    const product = productMap.get(id);
-    if (!product || !downloads[id] || !Number.isSafeInteger(product.priceMinor) || product.priceMinor < 1 || product.currency !== currency || !Number.isInteger(quantity) || quantity < 1 || quantity > 10 || seen.has(id)) {
-      return respond(res, 400, { error: 'One or more items are unavailable. Refresh the store and try again.' });
-    }
-    seen.add(id);
-    normalized.push({ id, quantity, name: product.name, amount: product.priceMinor, description: String(product.description || '').slice(0, 250) });
+  const ip = clientIp(req);
+  const limit = await rateLimit(`checkout:${ip}`, { limit: 8, windowSeconds: 600 });
+  res.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit.remaining)));
+  if (!limit.allowed) {
+    res.setHeader('Retry-After', String(limit.retryAfter));
+    return json(res, 429, { error: 'Too many checkout attempts. Please wait a few minutes and try again.' });
   }
 
-  const amount = normalized.reduce((sum, item) => sum + item.amount * item.quantity, 0);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000000) return respond(res, 400, { error: 'The order total is invalid.' });
+  const readiness = config.storeReadiness();
+  if (!readiness.ready) {
+    console.error('[keemz] checkout blocked — missing configuration:', readiness.missing.join(', '));
+    return json(res, 503, {
+      error:
+        'The store is not accepting payments yet. Checkout is disabled until payment, delivery and email settings are complete.'
+    });
+  }
 
-  const nameParts = fullName.split(' ');
-  const firstName = nameParts.shift() || 'Customer';
-  const lastName = nameParts.join(' ') || firstName;
-  const nonce = crypto.randomUUID().replace(/-/g, '');
-  const orderData = {
-    v: 1,
-    nonce,
-    createdAt: Date.now(),
-    email,
-    amount,
-    currency,
-    items: normalized.map(({ id, quantity }) => ({ id, quantity }))
-  };
-  const orderPayload = Buffer.from(JSON.stringify(orderData)).toString('base64url');
-  const orderSignature = crypto.createHmac('sha256', process.env.PAYMENT_SIGNING_SECRET).update(orderPayload).digest('hex');
-  const specialReference = `KAL:${nonce}:${orderSignature}`;
-  const baseUrl = (process.env.PAYMOB_BASE_URL || 'https://accept.paymob.com').replace(/\/$/, '');
-  const integrationId = Number(process.env.PAYMOB_INTEGRATION_ID);
-  if (!Number.isSafeInteger(integrationId) || integrationId < 1) return respond(res, 503, { error: 'Paymob integration ID is invalid.' });
+  const body = readJsonBody(req);
+  if (!body.ok) return json(res, body.status, { error: body.error });
 
-  const intentionBody = {
-    amount,
-    currency,
-    payment_methods: [integrationId],
-    items: normalized.map(item => ({ name: item.name, amount: item.amount, description: item.description || item.name, quantity: item.quantity })),
-    billing_data: {
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone_number: phone,
-      apartment: 'NA',
-      floor: 'NA',
-      street: 'NA',
-      building: 'NA',
-      city: process.env.PAYMOB_CITY || 'Cairo',
-      state: process.env.PAYMOB_STATE || 'Cairo',
-      country: 'EG',
-      postal_code: process.env.PAYMOB_POSTAL_CODE || '00000'
-    },
-    extras: { order_data: orderPayload },
-    special_reference: specialReference,
-    expiration: 1800,
-    notification_url: `${siteUrl}/api/paymob-webhook`,
-    redirection_url: `${siteUrl}/payment-return.html`
-  };
+  const requestedItems = body.value?.items;
+  const rawCustomer = body.value?.customer || {};
+  const name = singleLine(rawCustomer.name, 120);
+  const email = String(rawCustomer.email || '').trim().toLowerCase();
+  const phone = normalizePhone(rawCustomer.phone);
+
+  if (name.length < 2) return json(res, 400, { error: 'Please enter your full name.' });
+  if (!isEmail(email)) return json(res, 400, { error: 'Please enter a valid email address for delivery.' });
+  if (!isPhone(phone)) return json(res, 400, { error: 'Please enter a valid phone number including country code.' });
+
+  const catalog = loadCatalog();
+  const resolved = resolveLineItems(requestedItems, catalog);
+  if (!resolved.ok) return json(res, resolved.status, { error: resolved.error });
+
+  const paymob = config.paymobConfig();
+  const secrets = config.signingSecrets();
+  const site = config.siteUrl();
+
+  const order = createOrder({
+    customer: { name, email, phone },
+    items: resolved.items,
+    amount: resolved.amount,
+    currency: resolved.currency,
+    ip,
+    userAgent: req.headers['user-agent']
+  });
 
   try {
-    const response = await fetch(`${baseUrl}/v1/intention/`, {
-      method: 'POST',
-      headers: { Authorization: `Token ${process.env.PAYMOB_SECRET_KEY}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(intentionBody)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.client_secret) {
-      console.error('Paymob intention error:', response.status, data);
-      return respond(res, 502, { error: 'Paymob could not create this checkout. Check your integration ID, currency and test/live keys.' });
-    }
-    const checkoutUrl = new URL('/unifiedcheckout/', baseUrl);
-    checkoutUrl.searchParams.set('publicKey', process.env.PAYMOB_PUBLIC_KEY);
-    checkoutUrl.searchParams.set('clientSecret', data.client_secret);
-    return respond(res, 200, { checkoutUrl: checkoutUrl.toString() });
+    await saveOrder(order);
   } catch (error) {
-    console.error('Checkout request failed:', error);
-    return respond(res, 502, { error: 'Payment service could not be reached. Please try again.' });
+    return fail(res, 503, 'The order could not be saved. Please try again in a moment.', error);
+  }
+
+  const nameParts = name.split(' ');
+  const firstName = nameParts.shift() || 'Customer';
+  const lastName = nameParts.join(' ') || firstName;
+  const returnToken = issueReturnToken(order.ref, secrets.payment);
+
+  const redirectionUrl = new URL(`${site}/payment-return`);
+  redirectionUrl.searchParams.set('ref', order.ref);
+  redirectionUrl.searchParams.set('t', returnToken);
+
+  try {
+    const intention = await createIntention({
+      config: paymob,
+      amount: order.amount,
+      currency: order.currency,
+      items: resolved.items,
+      customer: { firstName, lastName, email, phone },
+      orderRef: order.ref,
+      notificationUrl: `${site}/api/paymob-webhook`,
+      redirectionUrl: redirectionUrl.toString(),
+      // Kept for backwards compatibility with older deployed intentions.
+      extras: { kal_ref: order.ref, kal_v: 2 }
+    });
+
+    await updateOrder(order.ref, {
+      paymob: {
+        intentionId: intention.intentionId,
+        orderId: intention.paymobOrderId,
+        transactionId: null
+      }
+    });
+
+    const checkoutUrl = buildCheckoutUrl({
+      checkoutBase: paymob.checkoutBase,
+      publicKey: paymob.publicKey,
+      clientSecret: intention.clientSecret
+    });
+
+    return json(res, 200, { checkoutUrl, reference: order.ref });
+  } catch (error) {
+    await updateOrder(order.ref, { status: STATUS.FAILED }).catch(() => {});
+    if (error instanceof PaymobError) {
+      console.error('[keemz] Paymob intention failed:', {
+        message: error.message,
+        status: error.meta?.status,
+        detail: error.meta?.detail,
+        hint: error.meta?.hint
+      });
+      const isConfigProblem = error.meta?.status === 401 || error.meta?.status === 404;
+      return json(res, 502, {
+        error: isConfigProblem
+          ? 'The payment integration is not configured correctly, so checkout cannot start. Please contact the studio.'
+          : 'The payment provider could not create this checkout. No money has been taken — please try again.'
+      });
+    }
+    return fail(res, 502, 'The payment provider could not be reached. No money has been taken — please try again.', error);
   }
 };

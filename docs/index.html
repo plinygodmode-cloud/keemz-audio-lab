@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Keemz Audio Lab — Beats, Sound Design & Mixes</title>
+  <meta name="description" content="Independent audio studio: beat production, sound design and mixing with weight. Listen to selected work, book a session, or dig through the private sample vault.">
+  <meta name="theme-color" content="#050506">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://keemzaudiolab.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keemz Audio Lab">
+  <meta property="og:title" content="Keemz Audio Lab — Beats, Sound Design & Mixes">
+  <meta property="og:description" content="Beats, sound design and mixes with real weight. Selected work, studio services and a private sample vault.">
+  <meta property="og:url" content="https://keemzaudiolab.vercel.app/">
+  <meta property="og:image" content="https://keemzaudiolab.vercel.app/assets/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keemz Audio Lab">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Keemz Audio Lab — Beats, Sound Design & Mixes">
+  <meta name="twitter:description" content="Beats, sound design and mixes with real weight. Selected work, studio services and a private sample vault.">
+  <meta name="twitter:image" content="https://keemzaudiolab.vercel.app/assets/img/og.jpg">
+
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
+  <link rel="preload" href="assets/fonts/syne-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Keemz Audio Lab",
+    "url": "https://keemzaudiolab.vercel.app/",
+    "image": "https://keemzaudiolab.vercel.app/assets/img/og.jpg",
+    "description": "Independent audio studio for beat production, sound design, mixing and mastering.",
+    "areaServed": "Worldwide",
+    "knowsAbout": ["Beat production", "Sound design", "Mixing", "Mastering", "Audio branding"]
+  }
+  </script>
+</head>
+<body>
+  <div class="stage" aria-hidden="true">
+    <canvas id="bg"></canvas>
+    <div class="stage-glow stage-glow--warm"></div>
+    <div class="stage-glow stage-glow--cool"></div>
+    <div class="stage-rings"></div>
+    <div class="stage-grain"></div>
+  </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="scroll-rail" aria-hidden="true"><span id="scroll-progress"></span></div>
+
+  <header class="site-header" id="site-header">
+    <a class="brand" href="#top" aria-label="Keemz Audio Lab — back to top">
+      <span class="brand-mark" aria-hidden="true">K</span>
+      <span class="brand-type"><b>KEEMZ</b><i>audio lab</i></span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <a href="#work" data-nav><span class="nav-i">01</span><span class="nav-t">Work</span></a>
+      <a href="#store" data-nav><span class="nav-i">02</span><span class="nav-t">Vault</span></a>
+      <a href="#services" data-nav><span class="nav-i">03</span><span class="nav-t">Studio</span></a>
+      <a href="#contact" data-nav><span class="nav-i">04</span><span class="nav-t">Contact</span></a>
+    </nav>
+
+    <div class="header-tools">
+      <span class="availability" id="availability"><i aria-hidden="true"></i><span>Taking briefs</span></span>
+      <button class="bag-button" id="cart-open" type="button" aria-controls="cart-drawer" aria-expanded="false">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 6.5h14l-1.2 9.2a1.8 1.8 0 0 1-1.8 1.6H6a1.8 1.8 0 0 1-1.8-1.6Z"/><path d="M7 6.5V5a3 3 0 0 1 6 0v1.5"/></svg>
+        <span class="bag-count" id="cart-count">0</span>
+        <span class="visually-hidden" id="cart-count-sr" aria-live="polite">0 items in bag</span>
+      </button>
+      <button class="menu-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu">
+        <span class="visually-hidden">Menu</span>
+        <i aria-hidden="true"></i><i aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="Mobile">
+      <a href="#work" data-nav><span class="mono">01</span> Work</a>
+      <a href="#store" data-nav><span class="mono">02</span> Vault</a>
+      <a href="#services" data-nav><span class="mono">03</span> Studio</a>
+      <a href="#contact" data-nav><span class="mono">04</span> Contact</a>
+    </nav>
+    <p class="mobile-menu-foot mono" id="mobile-menu-foot"></p>
+  </div>
+
+  <main id="main">
+    <!-- ───────────────────────────── hero ───────────────────────────── -->
+    <section class="hero" id="top">
+      <div class="hero-top">
+        <p class="mono" data-location>Independent audio studio</p>
+        <p class="mono hero-top-mid" aria-hidden="true">Keemz Audio Lab</p>
+        <a class="scroll-cue" href="#listen"><span class="mono">Scroll</span><i aria-hidden="true"></i></a>
+      </div>
+
+      <h1 class="hero-title" id="hero-title">
+        <span class="hero-line hero-word hero-word--a">KEEMZ</span>
+        <span class="hero-line hero-script"><em>audio</em></span>
+        <span class="hero-line hero-word hero-word--b">LAB<span class="hero-dot">.</span></span>
+      </h1>
+
+      <div class="hero-bottom">
+        <div class="hero-copy">
+          <p class="hero-lede">
+            Beats, sound design and mixes with real weight — built for artists who care how the low end
+            lands in a car at two in the morning.
+          </p>
+          <div class="hero-actions">
+            <a class="cta" href="#work"><span>Hear the work</span><i aria-hidden="true">↘</i></a>
+            <a class="cta cta--ghost" href="#contact"><span>Start a project</span><i aria-hidden="true">↗</i></a>
+          </div>
+        </div>
+
+        <aside class="hero-panel" aria-label="Studio services index">
+          <p class="panel-label mono">Studio index</p>
+          <ul class="hero-list" id="hero-list"></ul>
+          <p class="hero-meta mono" id="hero-meta"></p>
+        </aside>
+      </div>
+
+    </section>
+
+    <!-- ──────────────────────────── ticker ──────────────────────────── -->
+    <section class="ticker" aria-hidden="true">
+      <div class="ticker-track" id="ticker">
+        <span>Beat production <b>✳</b> Sound design <b>✳</b> Mixing <b>✳</b> Mastering <b>✳</b> Audio branding <b>✳</b></span>
+      </div>
+    </section>
+
+    <div class="signal-strip"></div>
+
+    <!-- ─────────────────────────── listening ────────────────────────── -->
+    <section class="section listen" id="listen">
+      <div class="section-rail">
+        <p class="eyebrow mono"><span>01</span> Listening room</p>
+        <h2 class="section-title" id="listen-title">Press play.<br><em>Turn it up.</em></h2>
+        <p class="section-lede">
+          Releases, sessions and sketches — the fastest way to hear how the studio sounds. Everything
+          opens inside the page; nothing loads until you ask for it.
+        </p>
+        <div class="channel-links" id="channel-links"></div>
+      </div>
+      <div class="listen-stack" id="featured-embeds"></div>
+    </section>
+
+    <!-- ───────────────────────────── work ───────────────────────────── -->
+    <section class="section work" id="work">
+      <header class="section-head">
+        <div>
+          <p class="eyebrow mono"><span>02</span> Selects</p>
+          <h2 class="section-title" id="work-title">The <em>work.</em></h2>
+        </div>
+        <p class="section-note mono" id="track-status">Studio selects</p>
+      </header>
+
+      <div class="portfolio-controls">
+        <div class="filter-row" id="track-filters" role="group" aria-label="Filter work by category"></div>
+        <div class="search-field">
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="8.6" cy="8.6" r="5.6"/><path d="m13 13 4 4"/></svg>
+          <input id="track-search" type="search" placeholder="Search work" aria-label="Search the portfolio" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="track-list" id="track-list"></div>
+    </section>
+
+    <!-- ──────────────────────────── manifesto ───────────────────────── */
+    <section class="manifesto" aria-labelledby="manifesto-title">
+      <p class="manifesto-mark mono" aria-hidden="true">✦</p>
+      <h2 class="manifesto-text" id="manifesto-title">
+        Sound is the only part of a record you <em>feel</em> before you understand it.
+        So it gets built like architecture — measured, weighted, and loud only where it matters.
+      </h2>
+      <div class="manifesto-meta">
+        <span class="mono">Studio principle</span>
+        <span class="mono">01 / 01</span>
+      </div>
+    </section>
+
+    <!-- ───────────────────────────── vault ──────────────────────────── -->
+    <section class="section store" id="store">
+      <header class="section-head">
+        <div>
+          <p class="eyebrow mono"><span>03</span> The vault</p>
+          <h2 class="section-title" id="store-title">Sample <em>vault.</em></h2>
+        </div>
+        <div class="store-aside">
+          <p class="store-note" id="store-note">Instant delivery after payment. Private download links, never a public folder.</p>
+          <a class="text-link" id="licensing-link" href="licensing.html">Licence terms <span aria-hidden="true">↗</span></a>
+        </div>
+      </header>
+
+      <div class="store-grid" id="store-grid"></div>
+    </section>
+
+    <!-- ──────────────────────────── services ────────────────────────── -->
+    <section class="section services" id="services">
+      <header class="section-head">
+        <div>
+          <p class="eyebrow mono"><span>04</span> Studio</p>
+          <h2 class="section-title" id="services-title">What the <em>lab</em> does.</h2>
+        </div>
+        <p class="section-note mono">Four rooms, one signal path.</p>
+      </header>
+
+      <div class="service-grid" id="service-grid"></div>
+    </section>
+
+    <!-- ───────────────────────────── process ────────────────────────── -->
+    <section class="section process" id="process">
+      <header class="section-head">
+        <div>
+          <p class="eyebrow mono"><span>05</span> Method</p>
+          <h2 class="section-title" id="process-title">From brief to <em>bounce.</em></h2>
+        </div>
+      </header>
+
+      <ol class="process-list">
+        <li>
+          <span class="process-num mono">01</span>
+          <div><h3>Brief</h3><p>References, tempo range, vocal plan and the moment the record has to land. One call, clear notes.</p></div>
+        </li>
+        <li>
+          <span class="process-num mono">02</span>
+          <div><h3>Direction</h3><p>Palette, key, arrangement skeleton and a rough bounce to approve before anything gets polished.</p></div>
+        </li>
+        <li>
+          <span class="process-num mono">03</span>
+          <div><h3>Production</h3><p>Drums, low end, textures and vocal production — rebuilt until the record carries weight on small speakers.</p></div>
+        </li>
+        <li>
+          <span class="process-num mono">04</span>
+          <div><h3>Delivery</h3><p>Mix, master and stems, named and versioned, delivered with notes you can hand to a label.</p></div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ──────────────────────────── contact ─────────────────────────── -->
+    <section class="section contact" id="contact">
+      <div class="contact-head">
+        <p class="eyebrow mono"><span>06</span> Contact</p>
+        <h2 class="contact-title" id="contact-title">Let's make<br><em>something loud.</em></h2>
+        <p class="contact-lede">
+          Send the brief, the demo or just the reference track. Real replies from the studio, never a
+          form robot.
+        </p>
+        <p class="response-time mono" id="response-time">Reply within 1–2 business days</p>
+      </div>
+
+      <form class="contact-form" id="contact-form" novalidate>
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label mono">Name</span>
+            <input name="name" id="contact-name" required maxlength="120" autocomplete="name" placeholder="Your name">
+          </label>
+          <label class="field">
+            <span class="field-label mono">Email</span>
+            <input name="email" id="contact-email" type="email" required maxlength="200" autocomplete="email" placeholder="you@example.com">
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field-label mono">What do you need</span>
+          <span class="select-wrap">
+            <select name="service" id="contact-service" required></select>
+            <i aria-hidden="true">▾</i>
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="field-label mono">Project details</span>
+          <textarea name="message" id="contact-message" required rows="5" maxlength="5000" placeholder="References, deadline, budget range — anything useful."></textarea>
+        </label>
+
+        <div class="field-trap" aria-hidden="true">
+          <label>Website<input name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <div id="turnstile-slot"></div>
+
+        <div class="form-foot">
+          <p class="form-status" id="contact-status" role="status" aria-live="polite"></p>
+          <button class="cta cta--solid" type="submit" id="contact-submit">
+            <span class="btn-text">Send the brief</span><i aria-hidden="true">→</i>
+          </button>
+        </div>
+        <p class="form-legal mono">Your details are used to answer this inquiry only.</p>
+      </form>
+
+      <div class="social-list" id="social-list" aria-label="Studio channels"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <p class="footer-word" aria-hidden="true">KEEMZ<span>.</span></p>
+      <div class="footer-cols">
+        <div>
+          <p class="mono footer-head">Studio</p>
+          <a href="#work">Work</a>
+          <a href="#services">Services</a>
+          <a href="#store">Sample vault</a>
+        </div>
+        <div>
+          <p class="mono footer-head">Legal</p>
+          <a href="licensing.html">Licence terms</a>
+          <a href="payment-return.html">Order status</a>
+        </div>
+        <div>
+          <p class="mono footer-head">Elsewhere</p>
+          <div id="social-list-foot" class="footer-social"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="mono">© <span id="copyright">2026</span> Keemz Audio Lab</p>
+      <p class="mono">Built for headphones, tested on car speakers.</p>
+    </div>
+  </footer>
+
+  <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="Sample bag" aria-hidden="true" tabindex="-1" inert>
+    <div class="drawer-head">
+      <div><p class="eyebrow mono">Your selection</p><h2>Sample <em>bag.</em></h2></div>
+      <button class="icon-button" id="cart-close" type="button" aria-label="Close bag">×</button>
+    </div>
+    <div class="cart-lines" id="cart-lines"></div>
+    <div class="drawer-foot">
+      <div class="cart-total"><span class="mono">Total</span><strong id="cart-total">—</strong></div>
+      <p class="cart-hint" id="cart-hint">Taxes and delivery are handled by the payment provider.</p>
+      <button class="button button-primary checkout-open" id="checkout-open" type="button" disabled>Secure checkout <span aria-hidden="true">↗</span></button>
+      <p class="secure-note mono">Secure payment via Paymob</p>
+    </div>
+  </aside>
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+
+  <div class="modal-backdrop" id="checkout-backdrop" hidden>
+    <form class="checkout-modal" id="checkout-form" role="dialog" aria-modal="true" aria-labelledby="checkout-title" novalidate>
+      <div class="drawer-head">
+        <div><p class="eyebrow mono">Secure checkout</p><h2 id="checkout-title">One last <em>thing.</em></h2></div>
+        <button class="icon-button" type="button" id="checkout-close" aria-label="Close checkout">×</button>
+      </div>
+      <div class="checkout-summary" id="checkout-summary"></div>
+      <p class="checkout-intro">Download links are sent to this email address as soon as Paymob confirms the payment.</p>
+      <label class="field"><span class="field-label mono">Full name</span><input name="name" required maxlength="120" autocomplete="name" placeholder="Your full name"></label>
+      <label class="field"><span class="field-label mono">Email for delivery</span><input name="email" required type="email" maxlength="200" autocomplete="email" placeholder="you@example.com"></label>
+      <label class="field"><span class="field-label mono">Phone number</span><input name="phone" required type="tel" maxlength="30" autocomplete="tel" placeholder="+20 100 123 4567"></label>
+      <p class="form-status" id="checkout-status" role="status" aria-live="polite"></p>
+      <button class="button button-primary submit-button" id="pay-button" type="submit"><span class="button-label">Continue to Paymob</span> <span aria-hidden="true">↗</span></button>
+      <p class="secure-note mono">Card / wallet checkout hosted by Paymob</p>
+    </form>
+  </div>
+
+  <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript-card">
+      <p><strong>JavaScript is off.</strong> You can still browse the studio and reach out by email. The audio players, sample store and bag need JavaScript to run.</p>
+    </div>
+  </noscript>
+
+  <script defer src="assets/site-config.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script type="module" src="assets/scene.js"></script>
+</body>
+</html>

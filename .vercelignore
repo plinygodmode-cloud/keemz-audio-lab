@@ -1,0 +1,11 @@
+# Development-only files that must never be served from production.
+scripts/
+tests/
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+docs/
+design-preview.html
