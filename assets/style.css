@@ -505,17 +505,24 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 .hero-top .mono:last-child { text-align: right; }
 
 .hero-title {
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  margin-block: clamp(4px, 1vh, 16px);
+  align-self: stretch;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  min-height: min(46vh, 520px);
+  padding-block: clamp(6px, 1.6vh, 20px);
   font-family: var(--display);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: -0.045em;
-  line-height: 0.8;
-  font-size: clamp(3.6rem, 13.4vw, 15.5rem);
+  letter-spacing: -0.05em;
+  line-height: 0.78;
+  font-size: clamp(3rem, 11.8vw, 12.5rem);
 }
+
+/* KEEMZ top-left, LAB. bottom-right: the orb lives in the empty diagonal
+   between them, with the italic word crossing its face. */
+.hero-word { justify-self: start; }
+.hero-word--b { justify-self: end; }
 
 .hero-line {
   display: block;
@@ -523,26 +530,9 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
   clip-path: inset(0 0 100% 0);
   animation: lineIn 1.15s var(--ease) both;
 }
-.hero-line--sans:nth-of-type(1) { animation-delay: 0.12s; }
-.hero-line--serif { animation-delay: 0.3s; }
-.hero-line--sans:nth-of-type(3) { animation-delay: 0.46s; }
-
-.hero-line--serif {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-style: italic;
-  text-transform: lowercase;
-  font-size: 0.74em;
-  letter-spacing: -0.03em;
-  line-height: 0.86;
-  padding-left: clamp(0px, 8vw, 150px);
-  align-self: flex-start;
-}
-.hero-line--serif em { font-style: italic; }
-.hero-dot { color: var(--ember); }
-
-/* Indent the last line so the sculpture has room to breathe on the right. */
-.hero-line--sans:last-of-type { padding-left: clamp(0px, 4vw, 80px); }
+.hero-word--a { animation-delay: 0.1s; }
+.hero-script { animation-delay: 0.32s; }
+.hero-word--b { animation-delay: 0.5s; }
 
 @keyframes lineIn {
   from { clip-path: inset(0 0 100% 0); transform: translateY(0.12em); }
@@ -554,6 +544,21 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 @supports not (mix-blend-mode: exclusion) {
   .hero-line { mix-blend-mode: normal; }
 }
+
+.hero-script {
+  justify-self: center;
+  align-self: center;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-style: italic;
+  text-transform: lowercase;
+  font-size: 0.33em;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  padding-block: 0.08em;
+}
+.hero-script em { font-style: italic; }
+.hero-dot { color: var(--ember); }
 
 .hero-bottom {
   display: grid;
@@ -1975,9 +1980,8 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
   .nav { display: none; }
   .menu-button { display: grid; }
   .hero { min-height: auto; padding-top: 118px; padding-bottom: 56px; }
-  .hero-title { font-size: clamp(3rem, 17vw, 7rem); line-height: 0.86; }
-  .hero-line--serif { padding-left: 0.5em; }
-  .hero-line--sans:last-of-type { padding-left: 0; }
+  .hero-title { min-height: min(52vh, 460px); font-size: clamp(3rem, 17vw, 7rem); line-height: 0.82; }
+  .hero-script { font-size: 0.4em; }
   .hero-top-mid { display: none; }
   .track-row {
     grid-template-columns: 32px 52px minmax(0, 1fr) auto;
@@ -2001,7 +2005,7 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 
 @media (max-width: 620px) {
   .hero { padding-top: 104px; }
-  .hero-title { font-size: clamp(2.8rem, 18vw, 5.4rem); }
+  .hero-title { font-size: clamp(2.8rem, 18vw, 5.4rem); min-height: 44vh; }
   .hero-lede { font-size: 0.95rem; }
   .cta { padding: 13px 20px; font-size: 0.78rem; }
   .ticker-track span { font-size: 1.18rem; }
@@ -2031,7 +2035,7 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 @media (max-width: 420px) {
   :root { --pad: 18px; }
   .brand-type i { display: none; }
-  .hero-title { font-size: clamp(2.5rem, 19vw, 4.2rem); }
+  .hero-title { font-size: clamp(2.4rem, 19vw, 4.2rem); }
   .service-card { grid-template-columns: 26px minmax(0, 1fr); }
   .service-cta { display: none; }
   .track-index { display: none; }

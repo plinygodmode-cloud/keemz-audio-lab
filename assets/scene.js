@@ -16,6 +16,8 @@ import {
   Group,
   Mesh,
   IcosahedronGeometry,
+  SphereGeometry,
+  PlaneGeometry,
   TorusGeometry,
   MeshPhysicalMaterial,
   MeshBasicMaterial,
@@ -32,6 +34,7 @@ import {
   SRGBColorSpace,
   AdditiveBlending,
   DoubleSide,
+  BackSide,
   Clock
 } from './vendor/three.module.min.js';
 
@@ -76,7 +79,7 @@ function boot(canvasEl) {
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(42, 1, 0.1, 100);
-  camera.position.set(0, 0.15, 5.4);
+  camera.position.set(0, 0.1, 5.25);
 
   const clock = new Clock();
   const world = new Group();
@@ -101,19 +104,41 @@ function boot(canvasEl) {
 
   /* ----------------------------------------------------------------- core */
   const time = { value: 0 };
-  const coreUniforms = { uTime: time, uAmp: { value: 0.055 } };
-  const coreGeometry = new IcosahedronGeometry(1.24, 5);
-  const coreMaterial = liquidMetal(coreUniforms);
-  const core = new Mesh(coreGeometry, coreMaterial);
+  const coreUniforms = { uTime: time, uAmp: { value: 0.016 }, uScale: { value: 0.55 } };
+  const core = new Mesh(new SphereGeometry(0.95, 128, 96), liquidMetal(coreUniforms));
   world.add(core);
 
+  // A thin atmosphere: fresnel rim in ember, additive, seen from inside.
+  const auraUniforms = { uTime: time, uColor: { value: PALETTE.ember } };
+  const aura = new Mesh(new SphereGeometry(1.17, 64, 64), fresnelShell(auraUniforms));
+  world.add(aura);
+
+  // A single bright seam of light wrapping the orb, like a studio rim light.
+  const seam = new Mesh(
+    new TorusGeometry(1.015, 0.002, 3, 400),
+    new MeshBasicMaterial({
+      color: PALETTE.bone,
+      transparent: true,
+      opacity: 0.5,
+      blending: AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  seam.rotation.set(Math.PI / 2.55, 0.32, 0.18);
+  world.add(seam);
+
+  // Soft halo behind the orb so it sits in light rather than floating.
+  const halo = new Mesh(new PlaneGeometry(9, 9), haloMaterial());
+  halo.position.z = -1.6;
+  world.add(halo);
+
   const shell = new Mesh(
-    new IcosahedronGeometry(1.46, 2),
+    new IcosahedronGeometry(1.3, 2),
     new MeshBasicMaterial({
       color: PALETTE.ember,
       wireframe: true,
       transparent: true,
-      opacity: 0.16
+      opacity: 0.1
     })
   );
   world.add(shell);
@@ -151,6 +176,7 @@ function boot(canvasEl) {
   const smooth = new Vector2(0, 0);
   let scroll = 0;
   let scrollTarget = 0;
+  let baseY = 0.1;
   let visible = true;
   let frame = 0;
   let running = false;
@@ -160,18 +186,34 @@ function boot(canvasEl) {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-    // The hero type is stacked on the left; on wide screens the sculpture
-    // sits slightly right so the two overlap instead of hiding each other.
-    world.position.x = width / height < 0.95 ? 0 : 0.62;
+    // The hero type frames the orb on all four corners, so the sculpture
+    // stays dead centre at every size.
+    world.position.x = 0;
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     // On tall phones the object should not fill the screen edge to edge.
     camera.fov = width / height < 0.75 ? 54 : 42;
     camera.updateProjectionMatrix();
+    alignToHeroScript();
     dust.material.uniforms.uPixelRatio.value = dpr;
     embers.material.uniforms.uPixelRatio.value = dpr;
     if (!running) renderOnce();
+  }
+
+  /* The orb is composed to sit exactly behind the italic "audio" line, so we
+     measure that line instead of guessing its vertical centre. */
+  function alignToHeroScript() {
+    const script = document.querySelector('.hero-script');
+    if (!script) return;
+    const rect = script.getBoundingClientRect();
+    if (!rect.height) return;
+    const centre = rect.top + rect.height / 2;
+    const offsetPx = window.innerHeight / 2 - centre;
+    const worldHeight = 2 * Math.tan(((camera.fov * Math.PI) / 180) / 2) * camera.position.z;
+    const perPixel = worldHeight / window.innerHeight;
+    baseY = offsetPx * perPixel * 0.92;
+    world.position.y = baseY;
   }
 
   function renderOnce() {
@@ -183,8 +225,8 @@ function boot(canvasEl) {
 
   function placeCamera(p) {
     camera.position.x = smooth.x * 0.42;
-    camera.position.y = 0.18 + smooth.y * -0.32 + p * 0.55;
-    camera.position.z = 5.4 - p * 0.75;
+    camera.position.y = 0.14 + smooth.y * -0.26 + p * 0.45;
+    camera.position.z = 5.25 - p * 0.55;
     camera.lookAt(0, p * 0.35, 0);
   }
 
@@ -199,8 +241,9 @@ function boot(canvasEl) {
     smooth.x += (pointer.x - smooth.x) * Math.min(1, delta * 3.2);
     smooth.y += (pointer.y - smooth.y) * Math.min(1, delta * 3.2);
 
-    core.rotation.y = elapsed * 0.16 + scroll * 0.9;
-    core.rotation.x = Math.sin(elapsed * 0.22) * 0.12 + scroll * 0.22;
+    core.rotation.y = elapsed * 0.08;
+    core.rotation.x = Math.sin(elapsed * 0.18) * 0.06;
+    seam.rotation.z = 0.18 + Math.sin(elapsed * 0.2) * 0.1;
 
     shell.rotation.y = -elapsed * 0.1 - scroll * 0.5;
     shell.rotation.z = Math.sin(elapsed * 0.18) * 0.1;
@@ -209,7 +252,7 @@ function boot(canvasEl) {
     rings.rotation.x = scroll * 0.35;
     ringC.rotation.z = 0.5 + elapsed * 0.08;
 
-    world.position.y = Math.sin(elapsed * 0.42) * 0.035 - scroll * 0.28;
+    world.position.y = baseY + Math.sin(elapsed * 0.42) * 0.03 - scroll * 0.24;
     world.rotation.y = -0.5 + smooth.x * 0.3 + scroll * 0.24;
     world.rotation.x = smooth.y * -0.14;
 
@@ -252,6 +295,12 @@ function boot(canvasEl) {
   readScroll();
 
   window.addEventListener('resize', resize, { passive: true });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      alignToHeroScript();
+      if (!running) renderOnce();
+    }).catch(() => {});
+  }
 
   if (finePointer.matches && !reduceMotion.matches) {
     window.addEventListener(
@@ -320,15 +369,16 @@ function liquidMetal(uniforms) {
   const material = new MeshPhysicalMaterial({
     color: 0xffffff,
     metalness: 1,
-    roughness: 0.16,
-    envMapIntensity: 1.5,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.22
+    roughness: 0.045,
+    envMapIntensity: 1.75,
+    clearcoat: 1,
+    clearcoatRoughness: 0.04
   });
 
   material.onBeforeCompile = shader => {
     shader.uniforms.uTime = uniforms.uTime;
     shader.uniforms.uAmp = uniforms.uAmp;
+    shader.uniforms.uScale = uniforms.uScale;
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -336,12 +386,14 @@ function liquidMetal(uniforms) {
         `#include <common>
         uniform float uTime;
         uniform float uAmp;
+        uniform float uScale;
         // Slow, heavy, non-repeating surface breathing (three octaves).
         float kalWave(vec3 p, float t) {
-          return sin(p.x * 1.55 + t * 0.62) * 0.55
-               + sin(p.y * 1.95 - t * 0.48) * 0.38
-               + sin(p.z * 1.72 + t * 0.41) * 0.34
-               + sin((p.x + p.y + p.z) * 1.15 + t * 0.33) * 0.26;
+          vec3 q = p * uScale;
+          return sin(q.x * 1.55 + t * 0.62) * 0.55
+               + sin(q.y * 1.95 - t * 0.48) * 0.38
+               + sin(q.z * 1.72 + t * 0.41) * 0.34
+               + sin((q.x + q.y + q.z) * 1.15 + t * 0.33) * 0.26;
         }
         vec3 kalDisplace(vec3 p, float t) {
           float d = kalWave(p, t) * uAmp;
@@ -372,6 +424,70 @@ function liquidMetal(uniforms) {
 
   material.customProgramCacheKey = () => 'kal-liquid-metal-1';
   return material;
+}
+
+function fresnelShell(uniforms) {
+  return new ShaderMaterial({
+    side: BackSide,
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    uniforms: uniforms,
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uTime;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        // The back faces give us the inner rim of the shell.
+        float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 2.6);
+        float pulse = 0.8 + 0.2 * sin(uTime * 0.5);
+        gl_FragColor = vec4(uColor, fresnel * 0.5 * pulse);
+      }
+    `
+  });
+}
+
+function haloMaterial() {
+  return new ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    uniforms: {
+      uWarm: { value: new Color('#ff6a2b') },
+      uCool: { value: new Color('#5a63ff') }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uWarm;
+      uniform vec3 uCool;
+      varying vec2 vUv;
+      void main() {
+        vec2 p = vUv - 0.5;
+        float d = length(p);
+        // A soft pool of light, warmer to the upper right.
+        float glow = pow(smoothstep(0.52, 0.0, d), 2.6);
+        vec3 color = mix(uCool, uWarm, smoothstep(-0.35, 0.45, p.x + p.y * 0.6));
+        gl_FragColor = vec4(color, glow * 0.26);
+      }
+    `
+  });
 }
 
 function buildEnvironmentScene() {

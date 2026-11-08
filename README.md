@@ -40,9 +40,11 @@ extends the experience. Everything below was verified in the repository, not gue
 
 ### Enhancements
 
-- **Visual system (v3 "Monolith"):** a full-bleed 3D hero — a liquid-metal sculpture lit by a
-  procedural studio environment, ember wireframe shell and orbital rings — with the wordmark
-  blending through it in `exclusion`. Editorial type scale (Syne display, Instrument Serif italics,
+- **Visual system (v3 "Monolith"):** a full-bleed 3D hero — a mirror orb lit by a procedural
+  studio environment, with a fresnel aura, a light seam, orbital rings and a soft halo — framed by
+  the wordmark: `KEEMZ` top-left, `LAB.` bottom-right, and the italic *audio* crossing the orb,
+  all blending through it in `exclusion`. The orb is optically centred on that line by measuring it
+  at runtime, not by guessing. Editorial type scale (Syne display, Instrument Serif italics,
   Instrument Sans text, DM Mono micro-labels), hairline rules instead of boxes, a live marquee,
   magnetic calls to action, a pointer ring, scroll progress, and a print-like section rhythm.
   No glassmorphism, no neon gradients, no card soup.
