@@ -352,6 +352,24 @@ Or paste the variables in **Vercel → Project → Settings → Environment Vari
 npx vercel --prod
 ```
 
+### Publishing a static copy on GitHub Pages
+
+If you want a zero-cost public link (no Vercel account), build the Pages edition and switch
+Pages on:
+
+```bash
+npm run build:pages     # generates docs/ with relative paths and real .html links
+git add docs && git commit -m "Build Pages edition" && git push
+```
+
+Then **GitHub → Settings → Pages → Source: Deploy from a branch**, branch
+`arena/473d9bd5-keemz-audio-lab`, folder `/docs`. The site appears at
+`https://<user>.github.io/keemz-audio-lab/` in about a minute.
+
+That build is static by design: navigation, the licence page, the player UI and form validation
+all work, the store shows its empty state, and checkout/contact need the Vercel API. Private
+repositories need a paid GitHub plan for Pages.
+
 Redeploy after changing any environment variable. Finally:
 
 ```bash

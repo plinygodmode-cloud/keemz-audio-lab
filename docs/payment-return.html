@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050506">
+  <title>Payment status — Keemz Audio Lab</title>
+  <meta name="description" content="Payment status for your Keemz Audio Lab order.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/pages.css">
+  <script defer src="assets/return.js"></script>
+</head>
+<body>
+  <div class="stage" aria-hidden="true">
+    <div class="stage-glow stage-glow--warm"></div>
+    <div class="stage-glow stage-glow--cool"></div>
+    <div class="stage-grain"></div>
+  </div>
+
+  <div class="page-shell">
+    <header class="page-header">
+      <div class="page-header-inner">
+        <a class="brand" href="index.html" aria-label="Keemz Audio Lab — home">
+          <span class="brand-mark" aria-hidden="true">K</span>
+          <span class="brand-type"><b>KEEMZ</b><i>audio lab</i></span>
+        </a>
+        <a class="text-link" href="index.html">Back to the lab <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <section class="page-card" aria-labelledby="return-title" id="return-card">
+        <div class="page-mark" id="return-mark" aria-hidden="true">↗</div>
+        <p class="eyebrow" id="return-eyebrow">Payment return</p>
+        <h1 id="return-title">Checking your <em>payment.</em></h1>
+        <p id="return-message">
+          You are back from the payment provider. This page asks the studio server for the verified
+          status of your order — a browser redirect alone never counts as proof of payment.
+        </p>
+        <div class="page-meta" id="return-details" hidden></div>
+        <p class="page-status" id="return-status" role="status" aria-live="polite">Verifying with the order service…</p>
+        <div class="page-actions">
+          <button class="button button-primary" id="resend-button" type="button" hidden>
+            <span class="button-label">Email the links again</span> <span aria-hidden="true">↻</span>
+          </button>
+          <a class="button" href="index.html#store">Back to the store <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="page-note" id="return-note">
+          Download links are sent to the email address used at checkout and expire automatically.
+          If anything looks wrong, reply to that email and the studio will sort it out.
+        </p>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <div class="page-footer-inner">
+        <p class="mono footer-copy mono" id="copyright">© Keemz Audio Lab</p>
+        <nav class="page-footer-links" aria-label="Footer">
+          <a href="index.html#store">Store</a>
+          <a href="licensing.html">Licensing</a>
+          <a href="index.html#contact">Contact</a>
+        </nav>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

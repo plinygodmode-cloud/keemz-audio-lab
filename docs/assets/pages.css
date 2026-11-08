@@ -1,0 +1,251 @@
+/* Secondary pages (licensing, 404, payment return) — sits on top of style.css */
+
+.page-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  border-bottom: 1px solid var(--line-soft);
+}
+.page-header-inner {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 18px var(--pad);
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.page-main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: clamp(36px, 6vw, 84px) var(--pad);
+}
+
+.page-card {
+  width: min(720px, 100%);
+  padding: clamp(26px, 4.4vw, 56px);
+  border: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(240, 236, 227, 0.035), rgba(240, 236, 227, 0.01)),
+    rgba(8, 8, 10, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  text-align: center;
+  animation: cardIn 0.9s var(--ease) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page-card.is-wide { width: min(900px, 100%); text-align: left; }
+
+.page-mark {
+  width: 54px; height: 54px;
+  margin: 0 auto 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 74, 23, 0.45);
+  border-radius: 50%;
+  color: var(--ember);
+  font-size: 1.2rem;
+  line-height: 1;
+  font-family: var(--mono);
+}
+.page-mark.is-warn { border-color: rgba(255, 190, 90, 0.45); color: #ffc35a; }
+.page-mark.is-bad { border-color: rgba(255, 122, 122, 0.45); color: #ff8f8f; }
+.page-mark.is-good { border-color: rgba(125, 255, 178, 0.4); color: #7dffb2; }
+
+.page-card .eyebrow {
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--bone-3);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.page-card .eyebrow::after { display: none; }
+.page-card.is-wide .eyebrow { justify-content: flex-start; }
+
+.page-card h1 {
+  margin: 0 0 18px;
+  font-family: var(--display);
+  font-size: clamp(1.9rem, 4.6vw, 3.3rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.page-card h1 em {
+  color: var(--ember);
+  text-transform: lowercase;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.05em;
+  letter-spacing: -0.01em;
+}
+
+.page-card > p {
+  color: var(--bone-2);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  max-width: 58ch;
+  margin-inline: auto;
+}
+.page-card.is-wide > p { margin-inline: 0; }
+
+.page-meta {
+  display: grid;
+  gap: 0;
+  margin: 26px 0;
+  border-top: 1px solid var(--line-soft);
+  text-align: left;
+}
+.page-meta[hidden] { display: none; }
+.page-meta div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+}
+.page-meta strong {
+  color: var(--bone);
+  font-weight: 400;
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.72rem;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 26px;
+}
+.page-card.is-wide .page-actions { justify-content: flex-start; }
+.page-actions .button { padding: 13px 20px; }
+
+.page-status {
+  margin-top: 16px;
+  min-height: 1.2em;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+}
+.page-status.is-error { color: var(--ember-2); }
+
+.page-note {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.76rem;
+  line-height: 1.7;
+  color: var(--bone-3);
+  text-align: left;
+}
+.page-note[hidden] { display: none; }
+
+/* -------------------------------------------------------------- document --- */
+.doc { display: grid; gap: clamp(22px, 3vw, 34px); margin-top: clamp(26px, 3.4vw, 40px); }
+.doc section { display: grid; gap: 12px; }
+.doc h2 {
+  font-family: var(--display);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--bone);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.doc p,
+.doc li { font-size: 0.9rem; line-height: 1.75; color: var(--bone-2); }
+.doc ul { display: grid; gap: 8px; }
+.doc li { position: relative; padding-left: 18px; }
+.doc li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 7px;
+  height: 1px;
+  background: var(--ember);
+}
+.doc table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.doc th,
+.doc td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: top;
+}
+.doc th {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.doc td { color: var(--bone-2); }
+.doc td:first-child { color: var(--bone); }
+.doc strong { color: var(--bone); font-weight: 500; }
+
+/* ---------------------------------------------------------------- footer --- */
+.page-footer {
+  border-top: 1px solid var(--line-soft);
+  margin-top: auto;
+}
+.page-footer-inner {
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 20px var(--pad);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.page-footer-links { display: flex; flex-wrap: wrap; gap: 18px; }
+.page-footer-links a {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+  transition: color 0.35s var(--ease);
+}
+.page-footer-links a:hover { color: var(--ember); }
+
+@media (max-width: 620px) {
+  .page-header-inner { min-height: 64px; }
+  .page-card { padding: 24px 20px; }
+  .page-card h1 { font-size: clamp(1.7rem, 8vw, 2.5rem); }
+  .page-actions .button { width: 100%; justify-content: center; }
+  .doc table { font-size: 0.78rem; }
+  .doc th, .doc td { padding: 10px 8px; }
+  .page-footer-inner { flex-direction: column; align-items: flex-start; }
+}

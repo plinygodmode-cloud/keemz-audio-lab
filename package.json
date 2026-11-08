@@ -2,7 +2,7 @@
   "name": "keemz-audio-lab",
   "version": "2.0.0",
   "private": true,
-  "description": "Keemz Audio Lab — premium audio portfolio, sample store and secure digital delivery on Vercel",
+  "description": "Keemz Audio Lab \u2014 premium audio portfolio, sample store and secure digital delivery on Vercel",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "node scripts/dev-server.js",
@@ -12,7 +12,8 @@
     "check": "node scripts/check.js",
     "verify": "npm run check && npm test",
     "deploy": "vercel --prod",
-    "deploy:preview": "vercel"
+    "deploy:preview": "vercel",
+    "build:pages": "node scripts/build-pages.js"
   },
   "engines": {
     "node": ">=20"
