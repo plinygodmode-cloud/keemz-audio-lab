@@ -2329,3 +2329,47 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
   .hero-word--a,
   .hero-word--b { max-width: 100%; }
 }
+
+
+/* Mobile polish: keep the identity legible inside narrow viewports. */
+.hero-title { min-width: 0; }
+.hero-word { max-width: 100%; white-space: nowrap; }
+.hero-copy, .hero-bottom { min-width: 0; }
+.hero-lede { max-width: 42ch; overflow-wrap: anywhere; }
+.hero-script {
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.19em;
+  color: rgba(240, 236, 227, 0.82);
+}
+.hero-script em { font-style: normal; }
+.cta-icon {
+  width: 18px; height: 18px; flex: 0 0 18px;
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 0.5s var(--ease);
+}
+.cta:hover .cta-icon { transform: translate(3px, -3px); }
+@media (max-width: 620px) {
+  .hero-title {
+    width: 100%; min-height: 31vh;
+    font-size: clamp(2.15rem, 13vw, 4.7rem);
+    letter-spacing: -0.075em;
+    line-height: 0.86;
+  }
+  .hero-word--a { justify-self: start; }
+  .hero-word--b { justify-self: end; }
+  .hero-script { font-size: 0.18em; letter-spacing: 0.2em; }
+  .hero-bottom { gap: 26px; }
+  .hero-lede { max-width: 34ch; font-size: 0.94rem; }
+  .hero-actions { gap: 9px; }
+  .cta { gap: 10px; padding: 13px 17px; font-size: 0.76rem; }
+}
+@media (max-width: 380px) {
+  .hero-title { font-size: clamp(2rem, 12.5vw, 3.2rem); }
+  .hero-actions { align-items: flex-start; flex-direction: column; }
+  .hero-actions .cta { width: fit-content; }
+}
