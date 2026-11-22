@@ -5,6 +5,7 @@
   const screen = document.getElementById('entry-screen');
   const enter = document.getElementById('entry-enter');
   const sound = document.getElementById('entry-sound');
+  const footerSound = document.getElementById('experience-sound');
   const clock = document.getElementById('entry-clock');
   const date = document.getElementById('entry-date');
   const progress = document.getElementById('entry-progress');
@@ -98,20 +99,26 @@
 
   function updateSoundLabel() {
     if (!sound) return;
-    sound.textContent = soundEnabled ? 'SOUND ON' : 'SOUND OFF';
-    sound.setAttribute('aria-pressed', String(soundEnabled));
+    if (sound) {
+      sound.textContent = soundEnabled ? 'SOUND ON' : 'SOUND OFF';
+      sound.setAttribute('aria-pressed', String(soundEnabled));
+    }
+    if (footerSound) {
+      footerSound.innerHTML = (soundEnabled ? 'sound on' : 'sound off') + ' <span aria-hidden="true">◖</span>';
+      footerSound.setAttribute('aria-pressed', String(soundEnabled));
+    }
   }
 
-  if (sound) {
-    sound.addEventListener('click', () => {
-      soundEnabled = !soundEnabled;
-      if (soundEnabled) startAudio();
-      else if (audioContext && master) {
-        master.gain.setTargetAtTime(0, audioContext.currentTime, 0.18);
-      }
-      updateSoundLabel();
-    });
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) startAudio();
+    else if (audioContext && master) {
+      master.gain.setTargetAtTime(0, audioContext.currentTime, 0.18);
+    }
+    updateSoundLabel();
   }
+  sound?.addEventListener('click', toggleSound);
+  footerSound?.addEventListener('click', toggleSound);
 
   function enterExperience() {
     if (entered) return;
