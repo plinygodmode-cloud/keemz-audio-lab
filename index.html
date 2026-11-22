@@ -44,6 +44,43 @@
   </script>
 </head>
 <body>
+  <section class="entry-screen" id="entry-screen" role="dialog" aria-modal="true" aria-labelledby="entry-title">
+    <header class="entry-top">
+      <div class="entry-datetime">
+        <time id="entry-clock" class="entry-clock">--:--:--</time>
+        <span id="entry-date" class="entry-date">CAIRO / LOCAL TIME</span>
+      </div>
+      <div class="entry-top-right">
+        <span class="entry-zone">UTC+02:00</span>
+        <button class="entry-sound" id="entry-sound" type="button" aria-pressed="true">SOUND ON</button>
+      </div>
+    </header>
+
+    <div class="entry-center">
+      <p class="entry-kicker">INDEPENDENT AUDIO STUDIO <span>·</span> CAIRO / GLOBAL</p>
+      <h1 class="entry-title" id="entry-title">KEEMZ<span>.</span></h1>
+      <p class="entry-subtitle">SOUND, ENGINEERED.</p>
+      <button class="entry-enter" id="entry-enter" type="button" disabled>
+        <span>ENTER</span><span class="entry-arrow" aria-hidden="true">→</span>
+      </button>
+      <p class="entry-headphones">HEADPHONES RECOMMENDED</p>
+    </div>
+
+    <footer class="entry-terminal" aria-label="Studio boot sequence">
+      <div class="entry-command"><span>keemz@audio-lab:~$</span> ./boot --experience</div>
+      <div class="entry-log">
+        <p><span>[ ok ]</span> technology as raw material</p>
+        <p><span>[ ok ]</span> rules, data, people</p>
+        <p><span>[ ok ]</span> experiment &gt; formula</p>
+        <p><span>[ ok ]</span> idea picks the tools</p>
+      </div>
+      <div class="entry-progress" role="progressbar" aria-label="Boot sequence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="entry-progress">
+        <span></span>
+      </div>
+      <p class="entry-ready">READY <span>—</span> PRESS ENTER</p>
+    </footer>
+    <div class="entry-index" aria-hidden="true">KAL / 001</div>
+  </section>
   <div class="stage" aria-hidden="true">
     <canvas id="bg"></canvas>
     <div class="stage-glow stage-glow--warm"></div>
@@ -365,6 +402,7 @@
     </div>
   </noscript>
 
+  <script defer src="/assets/entry.js"></script>
   <script defer src="/assets/site-config.js"></script>
   <script defer src="/assets/app.js"></script>
   <script type="module" src="/assets/scene.js"></script>
