@@ -60,7 +60,7 @@ rmrf(out);
 fs.mkdirSync(path.join(out, 'assets'), { recursive: true });
 
 /* ---------------------------------------------------------------- assets -- */
-for (const file of ['style.css', 'pages.css', 'app.js', 'scene.js', 'site-config.js', 'pages.js', 'return.js']) {
+for (const file of ['style.css', 'pages.css', 'app.js', 'entry.js', 'scene.js', 'site-config.js', 'pages.js', 'return.js']) {
   const source = fs.readFileSync(path.join(root, 'assets', file), 'utf8');
   let output = source;
   if (file.endsWith('.js')) output = rewriteJs(output);

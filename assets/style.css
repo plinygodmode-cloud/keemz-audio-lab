@@ -2373,3 +2373,230 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
   .hero-actions { align-items: flex-start; flex-direction: column; }
   .hero-actions .cta { width: fit-content; }
 }
+
+
+/* =========================================================================
+   KEEMZ ENTRY EXPERIENCE
+   A quiet terminal boot, one deliberate entrance, and a user-started sound bed.
+   ------------------------------------------------------------------------ */
+.entry-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 24px;
+  overflow: hidden;
+  padding: max(28px, env(safe-area-inset-top)) clamp(22px, 5vw, 72px) max(28px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(55% 45% at 50% 46%, rgba(255, 217, 0, 0.035), transparent 72%),
+    #070707;
+  color: #d5d1c7;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s cubic-bezier(0.2, 0.75, 0.25, 1), visibility 1s;
+}
+html.entry-active body { overflow: hidden; }
+html.entry-active .entry-screen {
+  opacity: 1;
+  visibility: visible;
+}
+.entry-screen.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.entry-top,
+.entry-top-right,
+.entry-datetime {
+  display: flex;
+  align-items: center;
+}
+.entry-top {
+  position: relative;
+  justify-content: space-between;
+  gap: 20px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+.entry-datetime {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.entry-clock {
+  color: #f1eee5;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.entry-date,
+.entry-zone,
+.entry-sound {
+  color: rgba(213, 209, 199, 0.52);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+.entry-top-right {
+  margin-left: auto;
+  gap: clamp(14px, 3vw, 34px);
+}
+.entry-sound {
+  padding: 8px 0 8px 14px;
+  border-left: 1px solid rgba(213, 209, 199, 0.18);
+  transition: color 0.25s ease;
+}
+.entry-sound:hover,
+.entry-sound[aria-pressed="true"] { color: #ffd900; }
+.entry-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+.entry-kicker,
+.entry-subtitle,
+.entry-headphones,
+.entry-ready,
+.entry-command,
+.entry-log,
+.entry-index {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.entry-kicker {
+  margin-bottom: clamp(16px, 3vh, 34px);
+  color: rgba(213, 209, 199, 0.5);
+  font-size: clamp(0.55rem, 1vw, 0.7rem);
+}
+.entry-kicker span { color: #ffd900; padding-inline: 5px; }
+.entry-title {
+  margin: 0;
+  color: #f1eee5;
+  font-family: var(--display);
+  width: 100%;
+  white-space: nowrap;
+  text-align: center;
+  font-size: clamp(4rem, 15vw, 14rem);
+  font-weight: 800;
+  letter-spacing: -0.105em;
+  line-height: 0.78;
+  text-indent: -0.1em;
+}
+.entry-title span { color: #ffd900; }
+.entry-subtitle {
+  margin-top: clamp(18px, 3vh, 34px);
+  color: rgba(213, 209, 199, 0.62);
+  font-size: clamp(0.58rem, 1vw, 0.72rem);
+}
+.entry-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 5vw, 56px);
+  min-width: 176px;
+  margin-top: clamp(30px, 5vh, 56px);
+  padding: 17px 22px;
+  border: 1px solid rgba(255, 217, 0, 0.75);
+  color: #ffd900;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+}
+.entry-enter:disabled { cursor: wait; opacity: 0.35; }
+.entry-enter:not(:disabled):hover {
+  background: #ffd900;
+  border-color: #ffd900;
+  color: #070707;
+}
+.entry-arrow { font-size: 1.15rem; transition: transform 0.3s ease; }
+.entry-enter:hover .entry-arrow { transform: translateX(5px); }
+.entry-headphones {
+  margin-top: 16px;
+  color: rgba(213, 209, 199, 0.38);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+}
+.entry-terminal {
+  width: min(100%, 620px);
+  justify-self: center;
+  color: rgba(213, 209, 199, 0.48);
+  font-family: var(--mono);
+  font-size: clamp(0.57rem, 1vw, 0.68rem);
+  letter-spacing: 0.04em;
+}
+.entry-command { margin-bottom: 12px; font-size: inherit; letter-spacing: 0.04em; }
+.entry-command span { color: #ffd900; }
+.entry-log { display: grid; gap: 5px; letter-spacing: 0.04em; }
+.entry-log p { opacity: 0; transform: translateY(5px); animation: entryLogIn 0.45s ease forwards; }
+.entry-log p:nth-child(1) { animation-delay: 0.25s; }
+.entry-log p:nth-child(2) { animation-delay: 0.48s; }
+.entry-log p:nth-child(3) { animation-delay: 0.71s; }
+.entry-log p:nth-child(4) { animation-delay: 0.94s; }
+.entry-log p span { color: #ffd900; padding-right: 9px; }
+.entry-progress {
+  height: 2px;
+  margin-top: 16px;
+  background: rgba(213, 209, 199, 0.12);
+}
+.entry-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: #ffd900;
+  transition: width 2.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.entry-screen.is-booting .entry-progress span { width: 100%; }
+.entry-ready {
+  margin-top: 10px;
+  color: rgba(213, 209, 199, 0.35);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+}
+.entry-ready span { color: #ffd900; padding-inline: 4px; }
+.entry-index {
+  position: absolute;
+  right: clamp(22px, 5vw, 72px);
+  bottom: max(28px, env(safe-area-inset-bottom));
+  color: rgba(213, 209, 199, 0.2);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+}
+@keyframes entryLogIn {
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 620px) {
+  .entry-screen {
+    gap: 16px;
+    padding-inline: 20px;
+  }
+  .entry-top { align-items: flex-start; gap: 8px; }
+  .entry-top-right { gap: 8px; }
+  .entry-date { max-width: 145px; font-size: 0.48rem; }
+  .entry-zone, .entry-sound { font-size: 0.48rem; letter-spacing: 0.08em; }
+  .entry-sound { padding-left: 7px; }
+  .entry-title { font-size: clamp(2.8rem, 14vw, 4rem); }
+  .entry-terminal { font-size: 0.55rem; }
+  .entry-index { display: none; }
+}
+@media (max-width: 380px) {
+  .entry-date { max-width: 112px; }
+  .entry-top-right { gap: 6px; }
+  .entry-zone, .entry-sound { font-size: 0.44rem; }
+}
+@media (max-height: 680px) {
+  .entry-screen { gap: 12px; }
+  .entry-kicker { margin-bottom: 14px; }
+  .entry-subtitle { margin-top: 14px; }
+  .entry-enter { margin-top: 20px; padding-block: 13px; }
+  .entry-headphones { margin-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-screen, .entry-progress span, .entry-arrow { transition-duration: 0.01ms; }
+  .entry-log p { animation: none; opacity: 1; transform: none; }
+}
